@@ -52,7 +52,24 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    // Device binding for students only
+    if (user.role === 'STUDENT') {
+      if (!user.deviceId && loginDto.deviceId) {
+        // First login: bind device
+        user.deviceId = loginDto.deviceId;
+        await this.userRepository.save(user);
+      } else if (user.deviceId && loginDto.deviceId !== user.deviceId) {
+        // Device mismatch: deny access
+        throw new UnauthorizedException('Access denied: Unregistered device');
+      }
+    }
+
+    const payload = { 
+      sub: user.id, 
+      email: user.email, 
+      role: user.role,
+      deviceId: user.deviceId 
+    };
     const token = this.jwtService.sign(payload);
 
     return { access_token: token };

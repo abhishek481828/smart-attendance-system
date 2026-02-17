@@ -13,7 +13,11 @@ export class AttendanceController {
   @Post('mark')
   @Roles(UserRole.STUDENT)
   markAttendance(@Body() markAttendanceDto: MarkAttendanceDto, @Request() req) {
-    return this.attendanceService.markAttendance(markAttendanceDto, req.user.sub);
+    return this.attendanceService.markAttendance(
+      markAttendanceDto, 
+      req.user.sub,
+      req.user.deviceId
+    );
   }
 
   @Get('session/:sessionId')

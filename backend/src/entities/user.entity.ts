@@ -26,6 +26,9 @@ export class User {
   })
   role: UserRole;
 
+  @Column({ nullable: true })
+  deviceId: string;
+
   @CreateDateColumn()
   createdAt: Date;
 }

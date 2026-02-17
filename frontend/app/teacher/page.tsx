@@ -147,7 +147,11 @@ export default function TeacherDashboard() {
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-2">QR Code (Updates every 5 seconds)</h3>
                 <div className="bg-white p-4 inline-block border">
-                  <QRCode value={qrToken} size={256} level="H" />
+                  <QRCode 
+                    value={JSON.stringify({ sessionId: activeSession.id, token: qrToken })} 
+                    size={256} 
+                    level="H" 
+                  />
                 </div>
                 <div className="mt-4">
                   <p className="text-sm font-medium mb-1">QR Token (For Testing)</p>

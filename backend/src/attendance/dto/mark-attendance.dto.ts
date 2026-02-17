@@ -1,4 +1,4 @@
-import { IsUUID, IsString } from 'class-validator';
+import { IsUUID, IsString, IsNumber, IsNotEmpty } from 'class-validator';
 
 export class MarkAttendanceDto {
   @IsUUID()
@@ -6,4 +6,12 @@ export class MarkAttendanceDto {
 
   @IsString()
   token: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  latitude: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  longitude: number;
 }
