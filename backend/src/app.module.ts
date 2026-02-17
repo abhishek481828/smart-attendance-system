@@ -38,6 +38,11 @@ import { AttendanceModule } from './attendance/attendance.module';
           },
           extra: {
             // Force IPv4 to avoid IPv6 connection issues on Render
+            connectionTimeoutMillis: 10000,
+          },
+          // Use pg driver options directly
+          driver: require('pg'),
+          driverExtra: {
             family: 4,
           },
         };
