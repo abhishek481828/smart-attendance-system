@@ -28,6 +28,8 @@ export default function LoginPage() {
         deviceId = generateDeviceId();
         localStorage.setItem('deviceId', deviceId);
       }
+      // Debug: Log API URL
+      console.log('API Base URL:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000');
     }
   }, []);
 
@@ -56,7 +58,12 @@ export default function LoginPage() {
         router.push('/student');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      console.error('Login error:', err);
+      if (err.code === 'ERR_NETWORK') {
+        setError('Cannot connect to server. Please check if backend is running.');
+      } else {
+        setError(err.response?.data?.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }
