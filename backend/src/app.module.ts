@@ -36,6 +36,10 @@ import { AttendanceModule } from './attendance/attendance.module';
           ssl: {
             rejectUnauthorized: false,
           },
+          extra: {
+            // Force IPv4 to avoid IPv6 connection issues on Render
+            family: 4,
+          },
         };
       },
     }),
