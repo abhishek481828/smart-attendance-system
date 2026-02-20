@@ -1,21 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { QrToken } from '../entities/qr-token.entity';
-import { Session } from '../entities/session.entity';
+import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
 
 @Injectable()
 export class QrTokenService {
-  constructor(
-    @InjectRepository(QrToken)
-    private qrTokenRepository: Repository<QrToken>,
-    @InjectRepository(Session)
-    private sessionRepository: Repository<Session>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async generateToken(sessionId: string) {
-    const session = await this.sessionRepository.findOne({
+    const session = await this.prisma.session.findUnique({
       where: { id: sessionId },
     });
 
@@ -30,17 +22,17 @@ export class QrTokenService {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 5000);
 
-    await this.qrTokenRepository.upsert(
-      {
-        session,
+    return this.prisma.qrToken.upsert({
+      where: { sessionId },
+      update: {
         token,
         expiresAt,
       },
-      ['session'],
-    );
-
-    return this.qrTokenRepository.findOne({
-      where: { session: { id: sessionId } },
+      create: {
+        sessionId,
+        token,
+        expiresAt,
+      },
     });
   }
 }

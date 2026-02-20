@@ -1,10 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Attendance, AttendanceStatus } from '../entities/attendance.entity';
-import { Session } from '../entities/session.entity';
-import { QrToken } from '../entities/qr-token.entity';
-import { User } from '../entities/user.entity';
+import { PrismaService } from '../prisma/prisma.service';
+import { AttendanceStatus } from '@prisma/client';
 import { MarkAttendanceDto } from './dto/mark-attendance.dto';
 
 @Injectable()
@@ -14,16 +10,7 @@ export class AttendanceService {
   private readonly CLASSROOM_LNG = 80.507680;
   private readonly ALLOWED_RADIUS_METERS = 50;
 
-  constructor(
-    @InjectRepository(Attendance)
-    private attendanceRepository: Repository<Attendance>,
-    @InjectRepository(Session)
-    private sessionRepository: Repository<Session>,
-    @InjectRepository(QrToken)
-    private qrTokenRepository: Repository<QrToken>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   // Haversine formula to calculate distance between two coordinates
   private calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -43,7 +30,7 @@ export class AttendanceService {
 
   async markAttendance(markAttendanceDto: MarkAttendanceDto, studentId: string, deviceId?: string) {
     // Validate device binding for students
-    const student = await this.userRepository.findOne({
+    const student = await this.prisma.user.findUnique({
       where: { id: studentId },
     });
 
@@ -67,7 +54,7 @@ export class AttendanceService {
       throw new ForbiddenException('Access denied: Outside classroom range');
     }
 
-    const session = await this.sessionRepository.findOne({
+    const session = await this.prisma.session.findUnique({
       where: { id: markAttendanceDto.sessionId },
     });
 
@@ -79,9 +66,9 @@ export class AttendanceService {
       throw new BadRequestException('Session is not active');
     }
 
-    const qrToken = await this.qrTokenRepository.findOne({
+    const qrToken = await this.prisma.qrToken.findFirst({
       where: {
-        session: { id: markAttendanceDto.sessionId },
+        sessionId: markAttendanceDto.sessionId,
         token: markAttendanceDto.token,
       },
     });
@@ -94,10 +81,10 @@ export class AttendanceService {
       throw new BadRequestException('Token expired');
     }
 
-    const existingAttendance = await this.attendanceRepository.findOne({
+    const existingAttendance = await this.prisma.attendance.findFirst({
       where: {
-        session: { id: markAttendanceDto.sessionId },
-        student: { id: studentId },
+        sessionId: markAttendanceDto.sessionId,
+        studentId,
       },
     });
 
@@ -105,20 +92,26 @@ export class AttendanceService {
       throw new BadRequestException('Attendance already marked');
     }
 
-    const attendance = this.attendanceRepository.create({
-      session: { id: markAttendanceDto.sessionId },
-      student: { id: studentId },
-      markedAt: new Date(),
-      status: AttendanceStatus.PRESENT,
+    return this.prisma.attendance.create({
+      data: {
+        sessionId: markAttendanceDto.sessionId,
+        studentId,
+        markedAt: new Date(),
+        status: AttendanceStatus.PRESENT,
+      },
     });
-
-    return this.attendanceRepository.save(attendance);
   }
 
   async getSessionAttendance(sessionId: string, teacherId: string) {
-    const session = await this.sessionRepository.findOne({
+    const session = await this.prisma.session.findUnique({
       where: { id: sessionId },
-      relations: ['class', 'class.teacher'],
+      include: {
+        class: {
+          include: {
+            teacher: true,
+          },
+        },
+      },
     });
 
     if (!session) {
@@ -129,9 +122,9 @@ export class AttendanceService {
       throw new ForbiddenException('Session does not belong to teacher');
     }
 
-    const attendance = await this.attendanceRepository.find({
-      where: { session: { id: sessionId } },
-      relations: ['student'],
+    const attendance = await this.prisma.attendance.findMany({
+      where: { sessionId },
+      include: { student: true },
     });
 
     return attendance.map(record => ({

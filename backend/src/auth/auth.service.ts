@@ -1,22 +1,19 @@
 import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from '../entities/user.entity';
+import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
 
   async register(registerDto: RegisterDto) {
-    const existingUser = await this.userRepository.findOne({
+    const existingUser = await this.prisma.user.findUnique({
       where: { email: registerDto.email },
     });
 
@@ -26,19 +23,19 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    const user = this.userRepository.create({
-      ...registerDto,
-      password: hashedPassword,
+    const user = await this.prisma.user.create({
+      data: {
+        ...registerDto,
+        password: hashedPassword,
+      },
     });
-
-    await this.userRepository.save(user);
 
     const { password, ...result } = user;
     return result;
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.userRepository.findOne({
+    const user = await this.prisma.user.findUnique({
       where: { email: loginDto.email },
     });
 
@@ -56,8 +53,11 @@ export class AuthService {
     if (user.role === 'STUDENT') {
       if (!user.deviceId && loginDto.deviceId) {
         // First login: bind device
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { deviceId: loginDto.deviceId },
+        });
         user.deviceId = loginDto.deviceId;
-        await this.userRepository.save(user);
       } else if (user.deviceId && loginDto.deviceId !== user.deviceId) {
         // Device mismatch: deny access
         throw new UnauthorizedException('Access denied: Unregistered device');

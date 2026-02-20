@@ -1,21 +1,16 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Session } from '../entities/session.entity';
+import { PrismaService } from '../prisma/prisma.service';
 import { StartSessionDto } from './dto/start-session.dto';
 import { EndSessionDto } from './dto/end-session.dto';
 
 @Injectable()
 export class SessionService {
-  constructor(
-    @InjectRepository(Session)
-    private sessionRepository: Repository<Session>,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async startSession(startSessionDto: StartSessionDto) {
-    const activeSession = await this.sessionRepository.findOne({
+    const activeSession = await this.prisma.session.findFirst({
       where: {
-        class: { id: startSessionDto.classId },
+        classId: startSessionDto.classId,
         isActive: true,
       },
     });
@@ -24,17 +19,17 @@ export class SessionService {
       throw new BadRequestException('Class already has an active session');
     }
 
-    const session = this.sessionRepository.create({
-      class: { id: startSessionDto.classId },
-      startTime: new Date(),
-      isActive: true,
+    return this.prisma.session.create({
+      data: {
+        classId: startSessionDto.classId,
+        startTime: new Date(),
+        isActive: true,
+      },
     });
-
-    return this.sessionRepository.save(session);
   }
 
   async endSession(endSessionDto: EndSessionDto) {
-    const session = await this.sessionRepository.findOne({
+    const session = await this.prisma.session.findUnique({
       where: { id: endSessionDto.sessionId },
     });
 
@@ -46,9 +41,12 @@ export class SessionService {
       throw new BadRequestException('Session is not active');
     }
 
-    session.endTime = new Date();
-    session.isActive = false;
-
-    return this.sessionRepository.save(session);
+    return this.prisma.session.update({
+      where: { id: endSessionDto.sessionId },
+      data: {
+        endTime: new Date(),
+        isActive: false,
+      },
+    });
   }
 }

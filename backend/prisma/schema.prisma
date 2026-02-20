@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole
+  deviceId  String?
+  createdAt DateTime @default(now())
+
+  classes     Class[]
+  attendances Attendance[]
+  devices     Device[]
+
+  @@map("users")
+}
+
+model Class {
+  id        String   @id @default(uuid())
+  name      String
+  teacherId String
+  teacher   User     @relation(fields: [teacherId], references: [id])
+  createdAt DateTime @default(now())
+
+  sessions Session[]
+
+  @@map("classes")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id])
+  startTime DateTime
+  endTime   DateTime?
+  isActive  Boolean
+  createdAt DateTime @default(now())
+
+  attendances Attendance[]
+  qrToken     QrToken?
+
+  @@map("sessions")
+}
+
+model Attendance {
+  id        String           @id @default(uuid())
+  sessionId String
+  session   Session          @relation(fields: [sessionId], references: [id])
+  studentId String
+  student   User             @relation(fields: [studentId], references: [id])
+  markedAt  DateTime
+  status    AttendanceStatus
+
+  @@map("attendances")
+}
+
+model QrToken {
+  id        String   @id @default(uuid())
+  sessionId String   @unique
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  token     String
+  expiresAt DateTime
+  updatedAt DateTime @updatedAt
+
+  @@map("qr_tokens")
+}
+
+model Device {
+  id               String   @id @default(uuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  deviceIdentifier String   @unique
+  createdAt        DateTime @default(now())
+
+  @@map("devices")
+}

@@ -1,37 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { Session } from '../entities/session.entity';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class SessionCleanupService {
-  constructor(
-    @InjectRepository(Session)
-    private readonly sessionRepository: Repository<Session>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
   async cleanupExpiredSessions() {
     const sixtyMinutesAgo = new Date();
     sixtyMinutesAgo.setMinutes(sixtyMinutesAgo.getMinutes() - 60);
 
-    const expiredSessions = await this.sessionRepository.find({
+    const now = new Date();
+
+    await this.prisma.session.updateMany({
       where: {
         isActive: true,
-        startTime: LessThan(sixtyMinutesAgo),
+        startTime: {
+          lt: sixtyMinutesAgo,
+        },
+      },
+      data: {
+        isActive: false,
+        endTime: now,
       },
     });
-
-    if (expiredSessions.length > 0) {
-      const now = new Date();
-      
-      for (const session of expiredSessions) {
-        session.isActive = false;
-        session.endTime = now;
-      }
-
-      await this.sessionRepository.save(expiredSessions);
-    }
   }
 }
