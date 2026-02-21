@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  // Allow ESLint errors during production builds
-};
+const nextConfig: NextConfig = {};
 
 export default nextConfig;

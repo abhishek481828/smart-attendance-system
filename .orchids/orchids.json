@@ -1,0 +1,10 @@
+{
+  "projectId": "7019c416-0fff-4c8d-b8d5-ded472a0b56d",
+  "createdAt": 1771618908132,
+  "version": "1.0",
+  "startupCommands": [
+    "bun install --cwd backend; bun run --cwd backend start:dev",
+    "bun install --cwd frontend; bun run --cwd frontend dev"
+  ],
+  "templateId": "any"
+}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import { Html5Qrcode } from 'html5-qrcode';
+import { Card, Alert, Badge, Spinner } from '@/components';
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -70,7 +71,6 @@ export default function StudentDashboard() {
       setSuccess('');
       setError('');
 
-      // Get GPS location
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
@@ -83,7 +83,7 @@ export default function StudentDashboard() {
               longitude,
             });
 
-            setSuccess('Attendance marked successfully');
+            setSuccess('Attendance marked successfully!');
             setTimeout(() => setSuccess(''), 3000);
           } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to mark attendance');
@@ -92,7 +92,7 @@ export default function StudentDashboard() {
             setLoading(false);
           }
         },
-        (err) => {
+        () => {
           setError('Location required to mark attendance');
           setTimeout(() => setError(''), 3000);
           setLoading(false);
@@ -103,7 +103,7 @@ export default function StudentDashboard() {
           maximumAge: 0,
         }
       );
-    } catch (err: any) {
+    } catch (err) {
       if (err instanceof SyntaxError) {
         setError('Invalid QR code');
         setTimeout(() => setError(''), 3000);
@@ -113,30 +113,36 @@ export default function StudentDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
-      <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Student Dashboard</h1>
+    <div className="max-w-lg mx-auto px-4 py-8">
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-slate-100">Mark Attendance</h1>
+        <p className="text-slate-400 mt-1 text-sm">Point your camera at the QR code</p>
+      </div>
 
-        {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-center">
-            {success}
-          </div>
-        )}
+      {success && (
+        <Alert variant="success" className="mb-4">{success}</Alert>
+      )}
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-center">
-            {error}
-          </div>
-        )}
+      {error && (
+        <Alert variant="error" className="mb-4" onDismiss={() => setError('')}>{error}</Alert>
+      )}
 
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold mb-2 text-center">Scan QR Code to Mark Attendance</h2>
-          <div id="qr-reader" className="border rounded overflow-hidden"></div>
+      <Card glass padding="none">
+        <div className="p-2">
+          <div id="qr-reader" className="rounded-lg overflow-hidden" />
         </div>
-
         {loading && (
-          <p className="text-center text-gray-600">Processing...</p>
+          <div className="border-t border-white/10 px-4 py-3 flex items-center justify-center gap-2">
+            <Spinner size="sm" />
+            <span className="text-sm text-slate-400">Processing attendance...</span>
+          </div>
         )}
+      </Card>
+
+      <div className="mt-4 text-center">
+        <Badge variant={scanning ? 'success' : 'warning'} dot>
+          {scanning ? 'Camera Active' : 'Starting Camera...'}
+        </Badge>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Spinner } from '@/components';
 
 export default function Home() {
   const router = useRouter();
@@ -15,7 +16,6 @@ export default function Home() {
     }
 
     try {
-      // Decode JWT token (payload is the middle part)
       const payload = JSON.parse(atob(token.split('.')[1]));
       const role = payload.role;
 
@@ -28,15 +28,14 @@ export default function Home() {
       } else {
         router.push('/login');
       }
-    } catch (error) {
-      // Invalid token, redirect to login
+    } catch {
       router.push('/login');
     }
   }, [router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <p>Redirecting...</p>
+      <Spinner size="lg" />
     </div>
   );
 }
