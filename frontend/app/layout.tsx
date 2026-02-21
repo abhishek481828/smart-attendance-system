@@ -22,15 +22,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Production debug: verify API URL configuration
-  if (typeof window !== 'undefined') {
-    console.log('API URL:', process.env.NEXT_PUBLIC_API_URL);
-  }
-  
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         {children}
       </body>
