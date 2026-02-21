@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "AttendX - Smart Attendance System",
-  description: "QR-based smart attendance tracking with geolocation verification",
+  description: "QR-based smart attendance tracking system",
 };
 
 export default function RootLayout({

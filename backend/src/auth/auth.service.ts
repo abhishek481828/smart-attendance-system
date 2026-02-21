@@ -49,26 +49,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Device binding for students only
-    if (user.role === 'STUDENT') {
-      if (!user.deviceId && loginDto.deviceId) {
-        // First login: bind device
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { deviceId: loginDto.deviceId },
-        });
-        user.deviceId = loginDto.deviceId;
-      } else if (user.deviceId && loginDto.deviceId !== user.deviceId) {
-        // Device mismatch: deny access
-        throw new UnauthorizedException('Access denied: Unregistered device');
-      }
-    }
-
     const payload = { 
       sub: user.id, 
       email: user.email, 
-      role: user.role,
-      deviceId: user.deviceId 
+      role: user.role
     };
     const token = this.jwtService.sign(payload);
 

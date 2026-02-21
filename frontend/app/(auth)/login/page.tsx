@@ -1,18 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { Card, Input, Button, Alert } from '@/components';
-
-function generateDeviceId(): string {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -21,27 +13,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      let deviceId = localStorage.getItem('deviceId');
-      if (!deviceId) {
-        deviceId = generateDeviceId();
-        localStorage.setItem('deviceId', deviceId);
-      }
-    }
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const deviceId = localStorage.getItem('deviceId');
       const response = await api.post('/auth/login', {
         email,
         password,
-        deviceId,
       });
       const { access_token } = response.data;
 

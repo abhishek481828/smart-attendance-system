@@ -15,8 +15,7 @@ export class AttendanceController {
   markAttendance(@Body() markAttendanceDto: MarkAttendanceDto, @Request() req) {
     return this.attendanceService.markAttendance(
       markAttendanceDto, 
-      req.user.sub,
-      req.user.deviceId
+      req.user.sub
     );
   }
 

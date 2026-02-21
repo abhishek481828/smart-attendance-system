@@ -71,38 +71,20 @@ export default function StudentDashboard() {
       setSuccess('');
       setError('');
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
+      try {
+        await api.post('/attendance/mark', {
+          sessionId: payload.sessionId,
+          token: payload.token,
+        });
 
-            await api.post('/attendance/mark', {
-              sessionId: payload.sessionId,
-              token: payload.token,
-              latitude,
-              longitude,
-            });
-
-            setSuccess('Attendance marked successfully!');
-            setTimeout(() => setSuccess(''), 3000);
-          } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to mark attendance');
-            setTimeout(() => setError(''), 3000);
-          } finally {
-            setLoading(false);
-          }
-        },
-        () => {
-          setError('Location required to mark attendance');
-          setTimeout(() => setError(''), 3000);
-          setLoading(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0,
-        }
-      );
+        setSuccess('Attendance marked successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to mark attendance');
+        setTimeout(() => setError(''), 3000);
+      } finally {
+        setLoading(false);
+      }
     } catch (err) {
       if (err instanceof SyntaxError) {
         setError('Invalid QR code');
